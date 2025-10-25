@@ -1,6 +1,10 @@
 'use client'
 import { ModeToggle } from "@/components/theme-toggler";
 import { Button } from "@/components/ui/button";
+import { FloatingMusicElements } from "@/components/FloatingMusicElements";
+import { HeaderSection } from "@/components/HeaderSection";
+import { SearchResultsList } from "@/components/SearchResultsList";
+import { FeatureCards } from "@/components/FeatureCards";
 import axios, { AxiosError } from "axios";
 import { Search } from "lucide-react";
 import { useState } from "react";
@@ -8,6 +12,8 @@ import { useState } from "react";
 export default function Home() {
   const [songName, setSongName] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [searchResults, setSearchResults] = useState([])
+  const [isSearchActive, setIsSearchActive] = useState(false)
 
   async function handleSubmit() {
     setIsSubmitting(true)
@@ -15,13 +21,14 @@ export default function Home() {
       if (!songName.trim()) {
         return;
       }
-
       console.log(`Searching for: ${songName}`);
-      //TODO: Add API call later
       const response = await axios.get(`api/searchsong?songname=${songName}`)
-      console.log(response);
+      
+      setSearchResults(response.data);
+      setIsSearchActive(true);
+      console.log(response.data);
     } catch (error) {
-      console.log(`E: ${error} ::::: ${AxiosError}`)
+      console.log(`E: ${error} :: ${AxiosError}`)
     } finally {
       setIsSubmitting(false)
     }
@@ -31,21 +38,16 @@ export default function Home() {
     setSongName(e.target.value);
   }
 
+  function decodeHtmlEntities(text: string) {
+    const textarea = document.createElement('textarea');
+    textarea.innerHTML = text;
+    return textarea.value;
+  }
+
   return (
     <div className="landing-page min-h-screen bg-gradient-to-br from-background via-background to-primary/10 relative overflow-hidden">
       {/* Floating Music Elements */}
-      <div className="absolute inset-0 opacity-20">
-        <div className="absolute top-20 left-10 text-6xl animate-spin-slow">💿</div>
-        <div className="absolute top-40 right-20 text-4xl animate-bounce">🎵</div>
-        <div className="absolute bottom-40 left-20 text-5xl animate-pulse">🎧</div>
-        <div className="absolute bottom-20 right-10 text-3xl animate-bounce">🎶</div>
-        <div className="absolute top-60 left-1/4 text-4xl animate-pulse">🎹</div>
-        <div className="absolute top-80 right-1/3 text-3xl animate-spin-slow">🎸</div>
-        <div className="absolute bottom-60 right-1/4 text-5xl animate-bounce">🎺</div>
-        <div className="absolute bottom-80 left-1/3 text-4xl animate-pulse">🎻</div>
-        <div className="absolute top-1/2 left-16 text-3xl animate-bounce">🎼</div>
-        <div className="absolute top-1/3 right-16 text-4xl animate-spin-slow">🎭</div>
-      </div>
+      <FloatingMusicElements />
 
       {/* Theme Toggle */}
       <div className="fixed top-4 right-4 md:top-6 md:right-6 z-50">
@@ -53,31 +55,18 @@ export default function Home() {
       </div>
 
       {/* Main Content */}
-      <div className="hero min-h-screen flex flex-col justify-center items-center px-4 md:px-6 py-8 relative z-10">
+      <div className={`hero flex flex-col px-4 md:px-6 py-8 relative z-10 transition-all duration-500 ${
+        isSearchActive 
+          ? 'justify-start items-start w-[28vw] h-screen overflow-y-auto' 
+          : 'justify-center items-center min-h-screen'
+      }`}>
         {/* Header Section */}
-        <div className="text-center max-w-4xl mx-auto mb-8 md:mb-12">
-          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-primary mb-4 md:mb-6 drop-shadow-lg animate-fade-in">
-            CrushVibes.Lyri
-          </h1>
-          <div className="bg-card/80 backdrop-blur-sm rounded-xl md:rounded-2xl p-4 md:p-8 shadow-xl border border-primary/20">
-            <h3 className="text-base sm:text-lg md:text-xl text-muted-foreground mb-3 md:mb-4">
-              Where Chemistry Meets Melody - Experience Lyrics Like Never Before
-            </h3>
-            <div className="flex items-center justify-center gap-2 sm:gap-3 text-primary font-bold text-xl sm:text-2xl md:text-3xl">
-              <span>Songs</span>
-              <span className="text-2xl sm:text-3xl md:text-4xl">×</span>
-              <span>Science</span>
-              <span className="text-2xl sm:text-3xl md:text-4xl">×</span>
-              <span>Style</span>
-            </div>
-            <p className="text-sm sm:text-base text-muted-foreground mt-3 md:mt-4">
-              Your lyrics, reimagined through elements. Because music is just beautiful chemistry. 🧬🎶
-            </p>
-          </div>
-        </div>
+        <HeaderSection isSearchActive={isSearchActive} />
 
         {/* Search Section */}
-        <div className="w-full max-w-4xl mx-auto mb-8 md:mb-16">
+        <div className={`w-full mx-auto ${
+          isSearchActive ? 'max-w-full mb-4' : 'max-w-4xl mb-8 md:mb-16'
+        }`}>
           <div className="bg-card/90 backdrop-blur-sm rounded-xl md:rounded-2xl p-4 md:p-8 shadow-2xl border border-primary/30">
             <div className="flex flex-col gap-3 md:gap-4">
               <input
@@ -99,25 +88,17 @@ export default function Home() {
             </div>
           </div>
         </div>
+        
+        {/* Search Results */}
+        {isSearchActive && searchResults.length > 0 && (
+          <SearchResultsList 
+            searchResults={searchResults} 
+            decodeHtmlEntities={decodeHtmlEntities} 
+          />
+        )}
 
         {/* Features Section */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 max-w-4xl mx-auto">
-          <div className="bg-card/70 backdrop-blur-sm rounded-lg md:rounded-xl p-4 md:p-6 text-center border border-primary/20 hover:border-primary/40 transition-all duration-200">
-            <div className="text-2xl md:text-3xl mb-2 md:mb-3">🧪</div>
-            <h3 className="font-semibold text-foreground mb-1 md:mb-2 text-sm md:text-base">Chemical Analysis</h3>
-            <p className="text-xs md:text-sm text-muted-foreground">Break down lyrics into elemental components</p>
-          </div>
-          <div className="bg-card/70 backdrop-blur-sm rounded-lg md:rounded-xl p-4 md:p-6 text-center border border-primary/20 hover:border-primary/40 transition-all duration-200">
-            <div className="text-2xl md:text-3xl mb-2 md:mb-3">🎼</div>
-            <h3 className="font-semibold text-foreground mb-1 md:mb-2 text-sm md:text-base">Musical Elements</h3>
-            <p className="text-xs md:text-sm text-muted-foreground">Discover the periodic table of music</p>
-          </div>
-          <div className="bg-card/70 backdrop-blur-sm rounded-lg md:rounded-xl p-4 md:p-6 text-center border border-primary/20 hover:border-primary/40 transition-all duration-200 sm:col-span-2 md:col-span-1">
-            <div className="text-2xl md:text-3xl mb-2 md:mb-3">✨</div>
-            <h3 className="font-semibold text-foreground mb-1 md:mb-2 text-sm md:text-base">Unique Experience</h3>
-            <p className="text-xs md:text-sm text-muted-foreground">Where science meets your favorite songs</p>
-          </div>
-        </div>
+        <FeatureCards isSearchActive={isSearchActive} />
       </div>
     </div>
   );
