@@ -5,15 +5,18 @@ import { FloatingMusicElements } from "@/components/FloatingMusicElements";
 import { HeaderSection } from "@/components/HeaderSection";
 import { SearchResultsList } from "@/components/SearchResultsList";
 import { FeatureCards } from "@/components/FeatureCards";
-import axios, { AxiosError } from "axios";
+import { AxiosError } from "axios";
 import { Search } from "lucide-react";
 import { useState } from "react";
+import { ApiAxiosHandler } from "../utils/apiAxiosHandler";
+import { Song } from "../types/song";
 
 export default function Home() {
   const [songName, setSongName] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [searchResults, setSearchResults] = useState([])
   const [isSearchActive, setIsSearchActive] = useState(false)
+  const [songNameForGemini, setSongNameForGemini] = useState('')
 
   async function handleSubmit() {
     setIsSubmitting(true)
@@ -21,12 +24,11 @@ export default function Home() {
       if (!songName.trim()) {
         return;
       }
-      console.log(`Searching for: ${songName}`);
-      const response = await axios.get(`api/searchsong?songname=${songName}`)
+      const data = await ApiAxiosHandler.searchSong(songName);
       
-      setSearchResults(response.data);
+      setSearchResults(data);
       setIsSearchActive(true);
-      console.log(response.data);
+      console.log(data);
     } catch (error) {
       console.log(`E: ${error} :: ${AxiosError}`)
     } finally {
@@ -42,6 +44,18 @@ export default function Home() {
     const textarea = document.createElement('textarea');
     textarea.innerHTML = text;
     return textarea.value;
+  }
+
+  async function handleSongSelect(song: Song) {
+    try {
+      const cleanTitle = decodeHtmlEntities(song.title);
+      setSongNameForGemini(cleanTitle);
+      
+      const songData = await ApiAxiosHandler.extractSongData(cleanTitle);
+      console.log('Extracted song data:', songData);
+    } catch (error) {
+      console.error('Error calling Gemini API:', error);
+    }
   }
 
   return (
@@ -77,10 +91,7 @@ export default function Home() {
               />
               <Button
                 disabled={isSubmitting || !songName.trim()}
-                onClick={() => {
-                  setIsSubmitting(true);
-                  handleSubmit();
-                }}
+                onClick={handleSubmit}
                 className="w-full sm:w-auto px-6 md:px-8 py-3 md:py-4 bg-primary/80 hover:bg-primary text-primary-foreground rounded-lg md:rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-primary/80 disabled:hover:scale-100"
               >
                 <Search className="w-5 h-5" />
@@ -93,7 +104,8 @@ export default function Home() {
         {isSearchActive && searchResults.length > 0 && (
           <SearchResultsList 
             searchResults={searchResults} 
-            decodeHtmlEntities={decodeHtmlEntities} 
+            decodeHtmlEntities={decodeHtmlEntities}
+            onSongSelect={handleSongSelect}
           />
         )}
 

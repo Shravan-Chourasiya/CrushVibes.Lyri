@@ -11,9 +11,10 @@ interface Song {
 interface SearchResultsListProps {
   searchResults: Song[];
   decodeHtmlEntities: (text: string) => string;
+  onSongSelect?: (song: Song) => void;
 }
 
-export function SearchResultsList({ searchResults, decodeHtmlEntities }: SearchResultsListProps) {
+export function SearchResultsList({ searchResults, decodeHtmlEntities, onSongSelect }: SearchResultsListProps) {
   return (
     <div className="w-full max-w-full flex-1 min-h-0">
       <div className="bg-card/90 backdrop-blur-sm rounded-xl p-4 shadow-xl border border-primary/20 h-full">
@@ -23,7 +24,8 @@ export function SearchResultsList({ searchResults, decodeHtmlEntities }: SearchR
             <SongListItem 
               key={index} 
               song={song} 
-              decodeHtmlEntities={decodeHtmlEntities} 
+              decodeHtmlEntities={decodeHtmlEntities}
+              onSongSelect={onSongSelect}
             />
           ))}
         </ul>
